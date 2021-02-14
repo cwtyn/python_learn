@@ -28,16 +28,40 @@ print(data_sort)
 #数据集：car_complain.csv
 #600条汽车质量投诉
 #对数据进行探索：品牌投诉总数，车型投诉总数，哪个品牌的平均车型投诉最多
-result_carmodel1 = result_carmodel.groupby(['brand'])['brand'].agg(['count'])
-result_carmodel1 = result_carmodel1.merge(result_brand, left_index=True, right_index=True, how='left')
-result_carmodel1.reset_index(inplace=True)
-result_carmodel1['平均车型投诉'] = result_carmodel1.apply(lambda x: x['count_y'] / x['count_x'], axis=1)
-result_carmodel1 = result_carmodel1.sort_values(['平均车型投诉'], ascending=False)
-result_carmodel1.rename(columns={'brand': '品牌', 'count_x': '车型总数', 'count_y': '投诉总数'}, inplace = True)
-print(result_carmodel1)
+# 对汽车质量进行统计
+def CarStatics():
+    df = pd.read_csv('./car_complain.csv')  # type:pandas.core.frame.DataFrame
+    
+    # 拆分problem类型 => 多个字段
+    df = df.drop('problem', axis=1).join(df.problem.str.get_dummies(','))
+    
+    # 数据清洗
+    def f(x):
+        x = x.replace('一汽-大众', '一汽大众')
+        return x
+    df['brand'] = df['brand'].apply(f)
 
-
-
+    # 对品牌投诉总数进行统计并排序
+    result_brand = df.groupby(['brand'])['id'].agg(['count'])
+    result_brand = result_brand.sort_values(['count'], ascending=False)
+    print(df)
+    print(result_brand)
+    # 对车型投诉总数进行统计排序
+    tags = df.columns[7:]
+    # print(tags)
+    result_carmodel = df.groupby(['brand', 'car_model'])['car_model'].agg(['count'])
+    # result_carmodel = result_carmodel.sort_values(['count'],ascending=False)
+    result_carmodel = result_carmodel.merge(result_brand, left_index=True, right_index=True, how='left')
+    result_carmodel.reset_index(inplace=True)
+    print(result_carmodel)
+    # 哪个品牌的平均车型投诉最多
+    result_carmodel1 = result_carmodel.groupby(['brand'])['brand'].agg(['count'])
+    result_carmodel1 = result_carmodel1.merge(result_brand, left_index=True, right_index=True, how='left')
+    result_carmodel1.reset_index(inplace=True)
+    result_carmodel1['平均车型投诉'] = result_carmodel1.apply(lambda x: x['count_y'] / x['count_x'], axis=1)
+    result_carmodel1 = result_carmodel1.sort_values(['平均车型投诉'], ascending=False)
+    result_carmodel1.rename(columns={'brand': '品牌', 'count_x': '车型总数', 'count_y': '投诉总数'}, inplace = True)
+    print(result_carmodel1)
 
 
 
